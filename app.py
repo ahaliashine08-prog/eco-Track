@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+from google import genai
+from google.genai import types
+import json
 
 app = Flask(__name__)
 app.secret_key = "ecotrack-secret-key"
@@ -301,7 +304,7 @@ def helper():
     )
 
 
-# ---------------- PHOTO UPLOAD ----------------
+# ---------------- AI PHOTO DETECTION ----------------
 
 @app.route("/photo", methods=["POST"])
 def photo():
@@ -314,24 +317,64 @@ def photo():
     if not uploaded_file or uploaded_file.filename == "":
         return "Please select an image."
 
-    upload_folder = "uploads"
+    try:
+        image_bytes = uploaded_file.read()
 
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
+        client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-    file_path = os.path.join(
-        upload_folder,
-        uploaded_file.filename
-    )
+        prompt = """
+        Identify the main waste item in this image.
 
-    uploaded_file.save(file_path)
+        Return ONLY valid JSON in this format:
+        {
+          "waste": "name of waste item",
+          "hazard": 0,
+          "bin": "Green",
+          "guidance": "short disposal guidance"
+        }
 
-    return render_template(
-        "photo_result.html",
-        filename=uploaded_file.filename
-    )
+        Use only one of these bins:
+        Green, Blue, Yellow, Black.
 
+        Hazard must be a number from 0 to 100.
+        """
 
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                types.Part.from_bytes(
+                    data=image_bytes,
+                    mime_type=uploaded_file.mimetype
+                ),
+                prompt
+            ]
+        )
+
+        text = response.text.strip()
+
+        # Remove markdown code fences if Gemini adds them
+        text = text.replace("```json", "").replace("```", "").strip()
+
+        result = json.loads(text)
+
+        return render_template(
+            "photo_result.html",
+            filename=uploaded_file.filename,
+            result=result
+        )
+
+    except Exception as e:
+
+        return render_template(
+            "photo_result.html",
+            filename=uploaded_file.filename,
+            result={
+                "waste": "Could not identify",
+                "hazard": "Unknown",
+                "bin": "Cannot determine",
+                "guidance": "Image detection failed. Please try another clear photo."
+            }
+        )
 # ---------------- START APP ----------------
 
 if __name__ == "__main__":

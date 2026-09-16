@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Eco Track - Waste Disposal Helper</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
@@ -32,33 +32,21 @@
 
     <h2>♻️ Result</h2>
 
-    <p>
-        <b>Waste Type:</b>
-        {{ result.type }}
-    </p>
+    <p><b>Waste Type:</b> {{ result.type }}</p>
 
-    <p>
-        <b>Hazardousness:</b>
-        {{ result.hazard }}%
-    </p>
+    <p><b>Hazardousness:</b> {{ result.hazard }}%</p>
 
-    <p>
-        <b>Recommended Bin:</b>
-        {{ result.bin }}
-    </p>
+    <p><b>Recommended Bin:</b> {{ result.bin }}</p>
 
-    <p>
-        <b>Disposal Guidance:</b>
-        {{ result.guidance }}
-    </p>
+    <p><b>Disposal Guidance:</b> {{ result.guidance }}</p>
 
     {% endif %}
 
     <hr>
 
-    <h2>📷 Photo Waste Detection</h2>
+    <h2>📷 AI Photo Waste Detection</h2>
 
-    <p>Upload a photo of the waste item.</p>
+    <p>Upload a photo and Eco Track will identify the waste.</p>
 
     <form action="/photo" method="POST" enctype="multipart/form-data">
 
@@ -67,7 +55,7 @@
         <br><br>
 
         <button type="submit">
-            Upload Photo
+            🤖 Detect Waste
         </button>
 
     </form>
