@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Eco Track - Photo Result</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <h1>📷 Waste Photo</h1>
+
+    <p>Your photo has been uploaded successfully! ✅</p>
+
+    <p>
+        <b>Uploaded file:</b> {{ filename }}
+    </p>
+
+    <hr>
+
+    <h2>🤖 Waste Detection</h2>
+
+    <p>
+        Automatic image recognition will be added in the next step.
+    </p>
+
+    <p>
+        Once AI detection is connected, Eco Track can identify the
+        waste type, recommended bin, hazardousness percentage and
+        disposal guidance from the uploaded photo.
+    </p>
+
+    <br>
+
+    <a href="/helper">
+        <button>⬅️ Back to Waste Helper</button>
+    </a>
+
+    <br><br>
+
+    <a href="/home">
+        <button>🏠 Home</button>
+    </a>
+
+</body>
+</html>
