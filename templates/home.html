@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Eco Track - Citizen Dashboard</title>
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <title>Eco Track - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
     <img src="{{ url_for('static', filename='logo.jpeg') }}"
-         alt="Eco Track Logo"
-         style="width: 180px;">
+         class="logo">
 
     <h1>🌱 ECO TRACK</h1>
 
@@ -20,37 +18,31 @@
 
     <hr>
 
-    <h2>♻️ Citizen Dashboard</h2>
-
-    <p>What would you like to do?</p>
-
-    <br>
-
-    <a href="/bins">
+    <a href="{{ url_for('bins') }}">
         <button>🗑️ Various Types of Bins</button>
     </a>
 
     <br><br>
 
-    <a href="/helper">
+    <a href="{{ url_for('helper') }}">
         <button>🔍 Waste Disposal Helper</button>
     </a>
 
     <br><br>
 
-    <a href="/report">
-        <button>📩 Report / Request Service</button>
+    <a href="{{ url_for('report') }}">
+        <button>📝 Reports</button>
     </a>
 
     <br><br>
 
-    <a href="/my-reports">
+    <a href="{{ url_for('my_reports') }}">
         <button>📋 My Reports</button>
     </a>
 
-    <hr>
+    <br><br>
 
-    <a href="/logout">
+    <a href="{{ url_for('logout') }}">
         <button>🚪 Logout</button>
     </a>
 

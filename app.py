@@ -1,14 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, render_template, request, redirect, url_for, session
-import sqlite3
-from werkzeug.security import generate_password_hash, check_password_hash
-import os
-import json
-
+from werkzeug.utils import secure_filename
 from google import genai
 from google.genai import types
+import os
+import json
+from datetime import datetime
 
 
 app = Flask(__name__)
@@ -18,12 +16,22 @@ app.secret_key = os.environ.get(
     "ecotrack-secret-key"
 )
 
-DATABASE = "ecotrack.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, "ecotrack.db")
+
+UPLOAD_FOLDER = os.path.join(
+    BASE_DIR,
+    "static",
+    "uploads"
+)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
-# =========================
-# DATABASE
-# =========================
+# ---------------- DATABASE ----------------
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
@@ -31,7 +39,16 @@ def get_db():
     return conn
 
 
+def column_exists(conn, table, column):
+    columns = conn.execute(
+        f"PRAGMA table_info({table})"
+    ).fetchall()
+
+    return any(row["name"] == column for row in columns)
+
+
 def create_database():
+
     conn = get_db()
 
     # USERS TABLE
@@ -39,20 +56,21 @@ def create_database():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            role TEXT NOT NULL DEFAULT 'citizen'
+            password TEXT NOT NULL
         )
     """)
 
-    # Check whether old database has role column
-    columns = conn.execute("PRAGMA table_info(users)").fetchall()
-    column_names = [column["name"] for column in columns]
+    # Add role if old database does not have it
+    if not column_exists(conn, "users", "role"):
+        conn.execute(
+            "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'citizen'"
+        )
 
-    if "role" not in column_names:
-        conn.execute("""
-            ALTER TABLE users
-            ADD COLUMN role TEXT NOT NULL DEFAULT 'citizen'
-        """)
+    conn.execute("""
+        UPDATE users
+        SET role = 'citizen'
+        WHERE role IS NULL OR role = ''
+    """)
 
     # REPORTS TABLE
     conn.execute("""
@@ -60,25 +78,47 @@ def create_database():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             citizen_username TEXT NOT NULL,
             message TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'Pending',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            location TEXT,
+            image_filename TEXT,
+            status TEXT DEFAULT 'Pending',
+            created_at TEXT
         )
     """)
+
+    # Add columns if old reports table exists
+    if not column_exists(conn, "reports", "location"):
+        conn.execute(
+            "ALTER TABLE reports ADD COLUMN location TEXT"
+        )
+
+    if not column_exists(conn, "reports", "image_filename"):
+        conn.execute(
+            "ALTER TABLE reports ADD COLUMN image_filename TEXT"
+        )
+
+    if not column_exists(conn, "reports", "status"):
+        conn.execute(
+            "ALTER TABLE reports ADD COLUMN status TEXT DEFAULT 'Pending'"
+        )
+
+    if not column_exists(conn, "reports", "created_at"):
+        conn.execute(
+            "ALTER TABLE reports ADD COLUMN created_at TEXT"
+        )
 
     conn.commit()
     conn.close()
 
 
 # IMPORTANT:
-# This runs when Render/Gunicorn loads app.py
+# This runs even when Render starts Flask using Gunicorn.
 create_database()
 
 
-# =========================
-# BIN INFORMATION
-# =========================
+# ---------------- WASTE DATA ----------------
 
 BIN_INFO = {
+
     "Green": {
         "description": "Biodegradable and wet waste.",
         "examples": "Food waste, vegetable peels, fruit peels, leaves"
@@ -96,14 +136,10 @@ BIN_INFO = {
 
     "Black": {
         "description": "General non-recyclable waste.",
-        "examples": "Diapers, tissues, thermocol and other general waste"
+        "examples": "Diapers, tissues, thermocol and other non-recyclable waste"
     }
 }
 
-
-# =========================
-# WASTE DATA
-# =========================
 
 WASTE_DATA = {
 
@@ -121,32 +157,18 @@ WASTE_DATA = {
         "guidance": "Put food waste in the green bin."
     },
 
-    "vegetable peel": {
-        "type": "Biodegradable waste",
-        "hazard": 5,
-        "bin": "Green",
-        "guidance": "Put vegetable peels in the green bin."
-    },
-
-    "fruit peel": {
-        "type": "Biodegradable waste",
-        "hazard": 5,
-        "bin": "Green",
-        "guidance": "Put fruit peels in the green bin."
-    },
-
     "paper": {
         "type": "Recyclable waste",
         "hazard": 5,
         "bin": "Blue",
-        "guidance": "Keep paper dry and put it in the blue bin."
+        "guidance": "Keep the paper dry and put it in the blue bin."
     },
 
     "cardboard": {
         "type": "Recyclable waste",
         "hazard": 5,
         "bin": "Blue",
-        "guidance": "Flatten cardboard and put it in the blue bin."
+        "guidance": "Flatten the cardboard and put it in the blue bin."
     },
 
     "plastic bottle": {
@@ -181,14 +203,14 @@ WASTE_DATA = {
         "type": "Hazardous waste",
         "hazard": 90,
         "bin": "Yellow",
-        "guidance": "Do not throw batteries into normal waste. Use an authorised battery collection point."
+        "guidance": "Do not throw batteries into normal waste."
     },
 
     "paint": {
         "type": "Special waste",
         "hazard": 85,
         "bin": "Yellow",
-        "guidance": "Do not pour paint into drains. Follow local hazardous-waste collection instructions."
+        "guidance": "Follow local hazardous-waste collection instructions."
     },
 
     "medicine": {
@@ -216,58 +238,33 @@ WASTE_DATA = {
         "type": "Non-recyclable waste",
         "hazard": 30,
         "bin": "Black",
-        "guidance": "Place thermocol in the black bin where local rules classify it as general waste."
+        "guidance": "Place thermocol in the black bin where locally appropriate."
     }
 }
 
 
-# =========================
-# LOGIN CHECKS
-# =========================
-
-def logged_in():
-    return "username" in session
-
-
-def is_citizen():
-    return session.get("role") == "citizen"
-
-
-def is_worker():
-    return session.get("role") == "worker"
-
-
-# =========================
-# FIRST PAGE
-# =========================
+# ---------------- LOGIN / REGISTER ----------------
 
 @app.route("/")
 def index():
 
-    if logged_in():
+    if "username" in session:
         return redirect(url_for("home"))
 
     return render_template("index.html")
 
-
-# =========================
-# REGISTER
-# =========================
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
     if request.method == "POST":
 
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-        role = request.form.get("role", "citizen")
-
-        if not username or not password:
-            return "Username and password are required."
+        username = request.form["username"].strip()
+        password = request.form["password"]
+        role = request.form["role"]
 
         if role not in ["citizen", "worker"]:
-            role = "citizen"
+            return "Invalid role selected."
 
         hashed_password = generate_password_hash(password)
 
@@ -293,37 +290,25 @@ def register():
 
             conn.close()
 
-            return "Username already exists. Please choose another username."
+            return "Username already exists!"
 
-        except Exception as e:
-
-            conn.close()
-
-            print("REGISTER ERROR:", e)
-
-            return "Registration failed."
 
     return render_template("register.html")
 
-
-# =========================
-# LOGIN
-# =========================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
     if request.method == "POST":
 
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
+        username = request.form["username"].strip()
+        password = request.form["password"]
 
         conn = get_db()
 
         user = conn.execute(
             """
-            SELECT *
-            FROM users
+            SELECT * FROM users
             WHERE username = ?
             """,
             (username,)
@@ -336,21 +321,15 @@ def login():
             password
         ):
 
-            session.clear()
-
             session["username"] = user["username"]
             session["role"] = user["role"]
 
             return redirect(url_for("home"))
 
-        return "Invalid username or password."
+        return "Invalid username or password!"
 
     return render_template("login.html")
 
-
-# =========================
-# LOGOUT
-# =========================
 
 @app.route("/logout")
 def logout():
@@ -360,53 +339,33 @@ def logout():
     return redirect(url_for("index"))
 
 
-# =========================
-# DASHBOARD
-# =========================
+# ---------------- HOME ----------------
 
 @app.route("/home")
 def home():
 
-    if not logged_in():
+    if "username" not in session:
         return redirect(url_for("login"))
 
-    # SERVICE WORKER
-    if is_worker():
-
-        conn = get_db()
-
-        reports = conn.execute(
-            """
-            SELECT *
-            FROM reports
-            ORDER BY id DESC
-            """
-        ).fetchall()
-
-        conn.close()
+    if session.get("role") == "worker":
 
         return render_template(
             "worker.html",
-            username=session["username"],
-            reports=reports
+            username=session["username"]
         )
 
-    # CITIZEN
     return render_template(
         "home.html",
-        username=session["username"],
-        role=session["role"]
+        username=session["username"]
     )
 
 
-# =========================
-# BINS
-# =========================
+# ---------------- BINS ----------------
 
 @app.route("/bins")
 def bins():
 
-    if not logged_in():
+    if "username" not in session:
         return redirect(url_for("login"))
 
     return render_template(
@@ -415,24 +374,19 @@ def bins():
     )
 
 
-# =========================
-# TEXT WASTE HELPER
-# =========================
+# ---------------- WASTE HELPER ----------------
 
 @app.route("/helper", methods=["GET", "POST"])
 def helper():
 
-    if not logged_in():
+    if "username" not in session:
         return redirect(url_for("login"))
 
     result = None
 
     if request.method == "POST":
 
-        waste = request.form.get(
-            "waste",
-            ""
-        ).strip().lower()
+        waste = request.form["waste"].strip().lower()
 
         if waste in WASTE_DATA:
 
@@ -444,7 +398,7 @@ def helper():
                 "type": "Unknown waste",
                 "hazard": "Unknown",
                 "bin": "Cannot determine",
-                "guidance": "This waste item is not currently in our database."
+                "guidance": "This item is not currently in our database."
             }
 
     return render_template(
@@ -453,14 +407,12 @@ def helper():
     )
 
 
-# =========================
-# AI IMAGE DETECTION
-# =========================
+# ---------------- AI PHOTO DETECTION ----------------
 
 @app.route("/photo", methods=["POST"])
 def photo():
 
-    if not logged_in():
+    if "username" not in session:
         return redirect(url_for("login"))
 
     uploaded_file = request.files.get("photo")
@@ -472,120 +424,67 @@ def photo():
 
         image_bytes = uploaded_file.read()
 
-        if not image_bytes:
-            raise Exception("Empty image file.")
-
         api_key = os.environ.get("GEMINI_API_KEY")
 
         if not api_key:
-            raise Exception("GEMINI_API_KEY is missing.")
+            raise Exception("GEMINI_API_KEY is not configured.")
 
-        client = genai.Client(
-            api_key=api_key
-        )
+        client = genai.Client(api_key=api_key)
 
         prompt = """
-Identify the main waste item in this image.
+        Identify the main waste item in this image.
 
-Return ONLY valid JSON.
+        Return ONLY valid JSON.
 
-Use exactly this format:
+        Format:
 
-{
-  "waste": "name of waste",
-  "type": "waste type",
-  "hazard": 0,
-  "bin": "Green",
-  "guidance": "short disposal guidance"
-}
+        {
+          "waste": "name of waste",
+          "type": "waste type",
+          "hazard": 0,
+          "bin": "Green",
+          "guidance": "short disposal guidance"
+        }
 
-Rules:
+        Rules:
 
-hazard must be a number between 0 and 100.
+        bin MUST be one of:
+        Green
+        Blue
+        Yellow
+        Black
 
-bin MUST be exactly one of:
-
-Green
-Blue
-Yellow
-Black
-
-Green = biodegradable or wet waste.
-Blue = dry recyclable waste.
-Yellow = special waste requiring careful disposal.
-Black = general non-recyclable waste.
-
-If the image is unclear, give the best possible identification.
-"""
+        hazard MUST be a number between 0 and 100.
+        """
 
         response = client.models.generate_content(
+
             model="gemini-3.8-flash",
+
             contents=[
                 types.Part.from_bytes(
                     data=image_bytes,
                     mime_type=uploaded_file.mimetype
                 ),
                 prompt
-            ]
+            ],
+
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
 
         text = response.text.strip()
 
-        # Remove markdown code fences if Gemini adds them
-        if text.startswith("```json"):
-            text = text[7:]
-
-        if text.startswith("```"):
-            text = text[3:]
-
-        if text.endswith("```"):
-            text = text[:-3]
-
-        text = text.strip()
+        text = text.replace(
+            "```json",
+            ""
+        ).replace(
+            "```",
+            ""
+        ).strip()
 
         result = json.loads(text)
-
-        allowed_bins = [
-            "Green",
-            "Blue",
-            "Yellow",
-            "Black"
-        ]
-
-        if result.get("bin") not in allowed_bins:
-            result["bin"] = "Cannot determine"
-
-        try:
-
-            hazard = int(
-                result.get("hazard", 0)
-            )
-
-            hazard = max(
-                0,
-                min(100, hazard)
-            )
-
-            result["hazard"] = hazard
-
-        except Exception:
-
-            result["hazard"] = "Unknown"
-
-        result.setdefault(
-            "waste",
-            "Unknown"
-        )
-
-        result.setdefault(
-            "type",
-            "Unknown"
-        )
-
-        result.setdefault(
-            "guidance",
-            "Please follow local waste-disposal instructions."
-        )
 
         return render_template(
             "photo_result.html",
@@ -595,95 +494,108 @@ If the image is unclear, give the best possible identification.
 
     except Exception as e:
 
-        print("AI IMAGE ERROR:", e)
-
-        result = {
-            "waste": "Could not identify",
-            "type": "Unknown",
-            "hazard": "Unknown",
-            "bin": "Cannot determine",
-            "guidance": "AI detection failed. Please try a clear image."
-        }
+        print("AI ERROR:", e)
 
         return render_template(
             "photo_result.html",
             filename=uploaded_file.filename,
-            result=result
+            result={
+                "waste": "Could not identify",
+                "type": "Unknown",
+                "hazard": "Unknown",
+                "bin": "Cannot determine",
+                "guidance": "AI detection failed. Please try another clear image."
+            }
         )
 
 
-# =========================
-# CITIZEN REPORT
-# =========================
+# ---------------- REPORT ----------------
 
 @app.route("/report", methods=["GET", "POST"])
 def report():
 
-    if not logged_in():
+    if "username" not in session:
         return redirect(url_for("login"))
 
-    if not is_citizen():
+    if session.get("role") != "citizen":
         return redirect(url_for("home"))
 
     if request.method == "POST":
 
-        message = request.form.get(
-            "message",
-            ""
-        ).strip()
+        message = request.form["message"].strip()
+        location = request.form["location"].strip()
 
-        if not message:
-            return "Please enter a message."
+        image = request.files.get("image")
 
-        conn = get_db()
+        image_filename = None
 
-        try:
+        if image and image.filename:
 
-            conn.execute(
-                """
-                INSERT INTO reports
-                (citizen_username, message, status)
-                VALUES (?, ?, ?)
-                """,
-                (
-                    session["username"],
-                    message,
-                    "Pending"
+            original_name = secure_filename(
+                image.filename
+            )
+
+            timestamp = datetime.now().strftime(
+                "%Y%m%d%H%M%S"
+            )
+
+            image_filename = (
+                timestamp
+                + "_"
+                + original_name
+            )
+
+            image.save(
+                os.path.join(
+                    app.config["UPLOAD_FOLDER"],
+                    image_filename
                 )
             )
 
-            conn.commit()
+        conn = get_db()
 
-        except Exception as e:
-
-            print("REPORT ERROR:", e)
-
-            conn.close()
-
-            return "Could not submit the report."
-
-        conn.close()
-
-        return redirect(
-            url_for("my_reports")
+        conn.execute(
+            """
+            INSERT INTO reports
+            (
+                citizen_username,
+                message,
+                location,
+                image_filename,
+                status,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                session["username"],
+                message,
+                location,
+                image_filename,
+                "Pending",
+                datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            )
         )
 
-    return render_template(
-        "report.html"
-    )
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("my_reports"))
+
+    return render_template("report.html")
 
 
-# =========================
-# MY REPORTS
-# =========================
+# ---------------- MY REPORTS ----------------
 
 @app.route("/my-reports")
 def my_reports():
 
-    if not logged_in():
+    if "username" not in session:
         return redirect(url_for("login"))
 
-    if not is_citizen():
+    if session.get("role") != "citizen":
         return redirect(url_for("home"))
 
     conn = get_db()
@@ -706,31 +618,52 @@ def my_reports():
     )
 
 
-# =========================
-# SERVICE WORKER UPDATE
-# =========================
+# ---------------- WORKER REPORTS ----------------
 
-@app.route(
-    "/update-report/<int:report_id>",
-    methods=["POST"]
-)
-def update_report(report_id):
+@app.route("/reports")
+def reports():
 
-    if not logged_in():
+    if "username" not in session:
         return redirect(url_for("login"))
 
-    if not is_worker():
+    if session.get("role") != "worker":
         return redirect(url_for("home"))
 
-    status = request.form.get(
-        "status",
-        "Pending"
+    conn = get_db()
+
+    reports = conn.execute(
+        """
+        SELECT *
+        FROM reports
+        ORDER BY id DESC
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "reports.html",
+        reports=reports
     )
+
+
+# ---------------- UPDATE REPORT ----------------
+
+@app.route("/update-report/<int:report_id>", methods=["POST"])
+def update_report(report_id):
+
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    if session.get("role") != "worker":
+        return redirect(url_for("home"))
+
+    status = request.form["status"]
 
     allowed_status = [
         "Pending",
         "In Progress",
-        "Completed"
+        "Resolved"
     ]
 
     if status not in allowed_status:
@@ -750,14 +683,10 @@ def update_report(report_id):
     conn.commit()
     conn.close()
 
-    return redirect(
-        url_for("home")
-    )
+    return redirect(url_for("reports"))
 
 
-# =========================
-# RUN LOCALLY
-# =========================
+# ---------------- RUN ----------------
 
 if __name__ == "__main__":
 
@@ -765,5 +694,6 @@ if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
-        port=5000
+        port=5000,
+        debug=True
     )

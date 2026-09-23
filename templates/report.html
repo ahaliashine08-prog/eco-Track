@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Eco Track - Submit Report</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         class="logo">
+
+    <div class="form-card">
+
+        <h1>📝 Submit a Report</h1>
+
+        <p>
+            Report a waste issue or request
+            service from Eco Track.
+        </p>
+
+        <form method="POST"
+              enctype="multipart/form-data">
+
+            <label>
+                <b>Report / Message</b>
+            </label>
+
+            <br><br>
+
+            <textarea
+                name="message"
+                placeholder="Describe the waste problem..."
+                required></textarea>
+
+            <br><br>
+
+            <label>
+                <b>Location</b>
+            </label>
+
+            <br><br>
+
+            <input
+                type="text"
+                name="location"
+                placeholder="Enter the location"
+                required>
+
+            <br><br>
+
+            <label>
+                <b>Upload Image</b>
+            </label>
+
+            <br><br>
+
+            <input
+                type="file"
+                name="image"
+                accept="image/*">
+
+            <br><br>
+
+            <p class="small-text">
+                You can upload a photo of the
+                reported waste or location.
+            </p>
+
+            <br>
+
+            <button type="submit">
+                📤 Submit Report
+            </button>
+
+        </form>
+
+    </div>
+
+    <br>
+
+    <a href="{{ url_for('my_reports') }}">
+        <button>📋 My Reports</button>
+    </a>
+
+    <br><br>
+
+    <a href="{{ url_for('home') }}">
+        <button>⬅️ Back to Home</button>
+    </a>
+
+</body>
+</html>

@@ -1,42 +1,57 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Eco Track - Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
     <img src="{{ url_for('static', filename='logo.jpeg') }}"
-         alt="Eco Track Logo"
-         style="width: 180px;">
+         class="logo">
 
-    <h2>Welcome Back! 🌱</h2>
+    <h1>🌱 ECO TRACK</h1>
 
-    <p>Login to continue to Eco Track</p>
+    <h2>Login</h2>
 
     <form method="POST">
 
-        <label>Username:</label><br>
-        <input type="text" name="username" required>
+        <label>Username</label>
 
         <br><br>
 
-        <label>Password:</label><br>
-        <input type="password" name="password" required>
+        <input
+            type="text"
+            name="username"
+            required>
 
         <br><br>
 
-        <button type="submit">🔐 Login</button>
+        <label>Password</label>
+
+        <br><br>
+
+        <input
+            type="password"
+            name="password"
+            required>
+
+        <br><br>
+
+        <button type="submit">
+            Login
+        </button>
 
     </form>
 
     <br>
 
-    <p>
-        Don't have an account?
-        <a href="/register">Create Account</a>
-    </p>
+    <a href="{{ url_for('register') }}">
+        Create a new account
+    </a>
 
 </body>
 </html>

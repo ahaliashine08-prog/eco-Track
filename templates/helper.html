@@ -1,15 +1,24 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Eco Track - Waste Disposal Helper</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         class="logo">
+
     <h1>🔍 Waste Disposal Helper</h1>
 
-    <p>Enter the name of a waste material to find the correct bin.</p>
+    <p>
+        Enter the name of a waste material
+        to find the correct bin.
+    </p>
 
     <form method="POST">
 
@@ -17,8 +26,7 @@
             type="text"
             name="waste"
             placeholder="Example: plastic bottle"
-            required
-        >
+            required>
 
         <button type="submit">
             Find Waste Type
@@ -28,17 +36,38 @@
 
     {% if result %}
 
-    <hr>
+        <hr>
 
-    <h2>♻️ Result</h2>
+        <div class="card">
 
-    <p><b>Waste Type:</b> {{ result.type }}</p>
+            <h2>♻️ Result</h2>
 
-    <p><b>Hazardousness:</b> {{ result.hazard }}%</p>
+            <p>
+                <b>Waste:</b>
+                {{ result.waste if result.waste else "—" }}
+            </p>
 
-    <p><b>Recommended Bin:</b> {{ result.bin }}</p>
+            <p>
+                <b>Waste Type:</b>
+                {{ result.type }}
+            </p>
 
-    <p><b>Disposal Guidance:</b> {{ result.guidance }}</p>
+            <p>
+                <b>Hazardousness:</b>
+                {{ result.hazard }}%
+            </p>
+
+            <p>
+                <b>Recommended Bin:</b>
+                {{ result.bin }}
+            </p>
+
+            <p>
+                <b>Guidance:</b>
+                {{ result.guidance }}
+            </p>
+
+        </div>
 
     {% endif %}
 
@@ -46,11 +75,21 @@
 
     <h2>📷 AI Photo Waste Detection</h2>
 
-    <p>Upload a photo and Eco Track will identify the waste.</p>
+    <p>
+        Upload a photo and Eco Track will
+        identify the waste using AI.
+    </p>
 
-    <form action="/photo" method="POST" enctype="multipart/form-data">
+    <form
+        action="{{ url_for('photo') }}"
+        method="POST"
+        enctype="multipart/form-data">
 
-        <input type="file" name="photo" accept="image/*" required>
+        <input
+            type="file"
+            name="photo"
+            accept="image/*"
+            required>
 
         <br><br>
 
@@ -62,7 +101,7 @@
 
     <br>
 
-    <a href="/home">
+    <a href="{{ url_for('home') }}">
         <button>⬅️ Back to Home</button>
     </a>
 

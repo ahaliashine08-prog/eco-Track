@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Eco Track - Service Worker</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         class="logo">
+
+    <h1>🧑‍🔧 Service Worker Dashboard</h1>
+
+    <h2>
+        Welcome, {{ username }}!
+    </h2>
+
+    <p>
+        Manage citizen waste reports and service requests.
+    </p>
+
+    <hr>
+
+    <a href="{{ url_for('reports') }}">
+        <button>📋 View Citizen Reports</button>
+    </a>
+
+    <br><br>
+
+    <a href="{{ url_for('logout') }}">
+        <button>🚪 Logout</button>
+    </a>
+
+</body>
+</html>

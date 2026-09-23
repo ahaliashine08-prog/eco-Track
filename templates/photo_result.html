@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Eco Track - AI Waste Result</title>
+    <title>Eco Track - AI Result</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
@@ -10,54 +11,58 @@
 <body>
 
     <img src="{{ url_for('static', filename='logo.jpeg') }}"
-         alt="Eco Track Logo"
-         style="width: 160px;">
+         class="logo">
 
     <h1>🤖 AI Waste Detection</h1>
 
     <p>
-        <b>Uploaded file:</b> {{ filename }}
+        <b>Uploaded file:</b>
+        {{ filename }}
     </p>
 
     <hr>
 
-    <h2>♻️ Detection Result</h2>
+    <div class="card">
 
-    <p>
-        <b>Waste:</b>
-        {{ result.waste }}
-    </p>
+        <h2>♻️ Detection Result</h2>
 
-    <p>
-        <b>Waste Type:</b>
-        {{ result.type }}
-    </p>
+        <p>
+            <b>Waste:</b>
+            {{ result.waste }}
+        </p>
 
-    <p>
-        <b>Hazardousness:</b>
-        {{ result.hazard }}%
-    </p>
+        <p>
+            <b>Waste Type:</b>
+            {{ result.type }}
+        </p>
 
-    <p>
-        <b>Recommended Bin:</b>
-        {{ result.bin }}
-    </p>
+        <p>
+            <b>Hazardousness:</b>
+            {{ result.hazard }}%
+        </p>
 
-    <p>
-        <b>Disposal Guidance:</b>
-        {{ result.guidance }}
-    </p>
+        <p>
+            <b>Recommended Bin:</b>
+            {{ result.bin }}
+        </p>
 
-    <hr>
+        <p>
+            <b>Disposal Guidance:</b>
+            {{ result.guidance }}
+        </p>
 
-    <a href="/helper">
-        <button>🔍 Detect Another Waste</button>
+    </div>
+
+    <br>
+
+    <a href="{{ url_for('helper') }}">
+        <button>⬅️ Back to Helper</button>
     </a>
 
     <br><br>
 
-    <a href="/home">
-        <button>🏠 Back to Dashboard</button>
+    <a href="{{ url_for('home') }}">
+        <button>🏠 Home</button>
     </a>
 
 </body>

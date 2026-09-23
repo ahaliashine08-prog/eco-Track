@@ -6,6 +6,13 @@ body {
     padding: 30px;
 }
 
+.logo {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
 h1 {
     color: #16803a;
 }
@@ -32,13 +39,60 @@ button:hover {
     background: #0e5f2a;
 }
 
-input {
+input,
+textarea,
+select {
     padding: 10px;
     border: 1px solid #aaa;
     border-radius: 6px;
     font-size: 16px;
 }
 
+textarea {
+    width: 80%;
+    max-width: 600px;
+    min-height: 120px;
+    resize: vertical;
+}
+
 hr {
     margin: 30px 0;
+}
+
+.card,
+.report-card,
+.form-card {
+    background: white;
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.10);
+}
+
+.report-image {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 10px;
+    margin: 10px;
+}
+
+.form-card {
+    text-align: left;
+}
+
+.form-card h1,
+.form-card h2,
+.form-card p {
+    text-align: center;
+}
+
+.form-card button {
+    display: block;
+    margin: auto;
+}
+
+.small-text {
+    font-size: 14px;
+    color: #666;
 }

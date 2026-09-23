@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Eco Track - Waste Disposal Helper</title>
+    <title>Eco Track - Waste Bins</title>
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -9,94 +10,68 @@
 <body>
 
     <img src="{{ url_for('static', filename='logo.jpeg') }}"
-         alt="Eco Track Logo"
-         style="width: 160px;">
+         class="logo">
 
-    <h1>🔍 Waste Disposal Helper</h1>
-
-    <p>
-        Enter the name of a waste material to find
-        the correct disposal bin.
-    </p>
-
-    <form method="POST">
-
-        <input
-            type="text"
-            name="waste"
-            placeholder="Example: plastic bottle"
-            required
-        >
-
-        <button type="submit">
-            🔎 Find Waste Type
-        </button>
-
-    </form>
-
-
-    {% if result %}
+    <h1>🗑️ Various Types of Waste Bins</h1>
 
     <hr>
 
-    <h2>♻️ Waste Result</h2>
+    <div class="card">
+        <h2>🟢 Green Bin</h2>
 
-    <p>
-        <b>Waste Type:</b>
-        {{ result.type }}
-    </p>
+        <p>
+            <b>Biodegradable / Wet Waste</b>
+        </p>
 
-    <p>
-        <b>Hazardousness:</b>
-        {{ result.hazard }}%
-    </p>
+        <p>
+            Food waste, vegetable peels,
+            fruit peels, leaves etc.
+        </p>
+    </div>
 
-    <p>
-        <b>Recommended Bin:</b>
-        {{ result.bin }}
-    </p>
+    <div class="card">
+        <h2>🔵 Blue Bin</h2>
 
-    <p>
-        <b>Disposal Guidance:</b>
-        {{ result.guidance }}
-    </p>
+        <p>
+            <b>Dry / Recyclable Waste</b>
+        </p>
 
-    {% endif %}
+        <p>
+            Paper, cardboard, plastic bottles,
+            metal cans etc.
+        </p>
+    </div>
 
+    <div class="card">
+        <h2>🟡 Yellow Bin</h2>
 
-    <hr>
+        <p>
+            <b>Special Waste</b>
+        </p>
 
-    <h2>📷 AI Waste Detection</h2>
+        <p>
+            Batteries, medicines and certain
+            chemical or medical waste.
+        </p>
+    </div>
 
-    <p>
-        Upload a clear photo of the waste.
-        Eco Track AI will identify the waste and
-        suggest the appropriate bin.
-    </p>
+    <div class="card">
+        <h2>⚫ Black Bin</h2>
 
-    <form action="/photo"
-          method="POST"
-          enctype="multipart/form-data">
+        <p>
+            <b>General / Non-Recyclable Waste</b>
+        </p>
 
-        <input
-            type="file"
-            name="photo"
-            accept="image/*"
-            required
-        >
-
-        <br><br>
-
-        <button type="submit">
-            🤖 Detect Waste with AI
-        </button>
-
-    </form>
+        <p>
+            Diapers, used tissues, thermocol
+            and other general waste.
+        </p>
+    </div>
 
     <br>
 
-    <a href="/home">
-        <button>⬅️ Back to Dashboard</button>
+    <a href="{{ url_for('home') }}">
+        <button>⬅️ Back to Home</button>
     </a>
 
 </body>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Eco Track - Reports</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         class="logo">
+
+    <h1>📋 Citizen Reports</h1>
+
+    {% if reports %}
+
+        {% for report in reports %}
+
+        <div class="report-card">
+
+            <h2>
+                Report #{{ report.id }}
+            </h2>
+
+            <p>
+                <b>Citizen:</b>
+                {{ report.citizen_username }}
+            </p>
+
+            <p>
+                <b>Message:</b>
+                {{ report.message }}
+            </p>
+
+            <p>
+                <b>Location:</b>
+                {{ report.location }}
+            </p>
+
+            <p>
+                <b>Date:</b>
+                {{ report.created_at }}
+            </p>
+
+            {% if report.image_filename %}
+
+                <p>
+                    <b>Uploaded Image:</b>
+                </p>
+
+                <img
+                    src="{{ url_for(
+                        'static',
+                        filename='uploads/' + report.image_filename
+                    ) }}"
+                    class="report-image">
+
+            {% else %}
+
+                <p>
+                    No image uploaded.
+                </p>
+
+            {% endif %}
+
+            <p>
+                <b>Current Status:</b>
+                {{ report.status }}
+            </p>
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'update_report',
+                    report_id=report.id
+                ) }}">
+
+                <select name="status">
+
+                    <option value="Pending">
+                        Pending
+                    </option>
+
+                    <option value="In Progress">
+                        In Progress
+                    </option>
+
+                    <option value="Resolved">
+                        Resolved
+                    </option>
+
+                </select>
+
+                <button type="submit">
+                    Update Status
+                </button>
+
+            </form>
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>
+            No citizen reports available.
+        </p>
+
+    {% endif %}
+
+    <br>
+
+    <a href="{{ url_for('home') }}">
+        <button>⬅️ Back to Dashboard</button>
+    </a>
+
+</body>
+</html>

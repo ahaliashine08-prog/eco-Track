@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Eco Track - My Reports</title>
 
@@ -10,68 +11,73 @@
 <body>
 
     <img src="{{ url_for('static', filename='logo.jpeg') }}"
-         alt="Eco Track Logo"
-         style="width: 160px;">
+         class="logo">
 
     <h1>📋 My Reports</h1>
 
-    <p>
-        Here you can check the reports and service requests
-        you have submitted.
-    </p>
+    <a href="{{ url_for('report') }}">
+        <button>➕ Send New Report</button>
+    </a>
 
-    <hr>
+    <br><br>
 
     {% if reports %}
 
         {% for report in reports %}
 
-            <div style="
-                border: 1px solid #aaa;
-                border-radius: 10px;
-                padding: 15px;
-                margin: 15px auto;
-                max-width: 600px;
-                background: white;
-            ">
+        <div class="report-card">
 
-                <h3>Report #{{ report.id }}</h3>
+            <h2>Report #{{ report.id }}</h2>
 
-                <p>
-                    <b>Message:</b><br>
-                    {{ report.message }}
-                </p>
+            <p>
+                <b>Message:</b>
+                {{ report.message }}
+            </p>
 
-                <p>
-                    <b>Status:</b>
-                    {{ report.status }}
-                </p>
+            <p>
+                <b>Location:</b>
+                {{ report.location }}
+            </p>
 
-                <p>
-                    <b>Submitted:</b>
-                    {{ report.created_at }}
-                </p>
+            <p>
+                <b>Status:</b>
+                {{ report.status }}
+            </p>
 
-            </div>
+            <p>
+                <b>Date:</b>
+                {{ report.created_at }}
+            </p>
+
+            {% if report.image_filename %}
+
+                <p><b>Uploaded Image:</b></p>
+
+                <img
+                    src="{{ url_for(
+                        'static',
+                        filename='uploads/' + report.image_filename
+                    ) }}"
+                    class="report-image">
+
+            {% endif %}
+
+        </div>
 
         {% endfor %}
 
     {% else %}
 
-        <p>📭 You haven't submitted any reports yet.</p>
+        <p>
+            You have not submitted any reports yet.
+        </p>
 
     {% endif %}
 
-    <hr>
+    <br>
 
-    <a href="/report">
-        <button>📩 Send New Report</button>
-    </a>
-
-    <br><br>
-
-    <a href="/home">
-        <button>⬅️ Back to Dashboard</button>
+    <a href="{{ url_for('home') }}">
+        <button>⬅️ Back to Home</button>
     </a>
 
 </body>
