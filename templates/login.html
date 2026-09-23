@@ -2,14 +2,18 @@
 <html>
 <head>
     <title>Eco Track - Login</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <h1>🌱 Eco Track</h1>
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         alt="Eco Track Logo"
+         style="width: 180px;">
 
-    <h2>Login</h2>
+    <h2>Welcome Back! 🌱</h2>
+
+    <p>Login to continue to Eco Track</p>
 
     <form method="POST">
 
@@ -23,13 +27,16 @@
 
         <br><br>
 
-        <button type="submit">Login</button>
+        <button type="submit">🔐 Login</button>
 
     </form>
 
     <br>
 
-    <a href="/register">Create a new account</a>
+    <p>
+        Don't have an account?
+        <a href="/register">Create Account</a>
+    </p>
 
 </body>
 </html>

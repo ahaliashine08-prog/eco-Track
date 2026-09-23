@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Eco Track - Photo Result</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Eco Track - AI Waste Result</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <h1>📷 Waste Photo</h1>
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         alt="Eco Track Logo"
+         style="width: 160px;">
 
-    <p>Your photo has been uploaded successfully! ✅</p>
+    <h1>🤖 AI Waste Detection</h1>
 
     <p>
         <b>Uploaded file:</b> {{ filename }}
@@ -17,28 +21,43 @@
 
     <hr>
 
-    <h2>🤖 Waste Detection</h2>
+    <h2>♻️ Detection Result</h2>
 
     <p>
-        Automatic image recognition will be added in the next step.
+        <b>Waste:</b>
+        {{ result.waste }}
     </p>
 
     <p>
-        Once AI detection is connected, Eco Track can identify the
-        waste type, recommended bin, hazardousness percentage and
-        disposal guidance from the uploaded photo.
+        <b>Waste Type:</b>
+        {{ result.type }}
     </p>
 
-    <br>
+    <p>
+        <b>Hazardousness:</b>
+        {{ result.hazard }}%
+    </p>
+
+    <p>
+        <b>Recommended Bin:</b>
+        {{ result.bin }}
+    </p>
+
+    <p>
+        <b>Disposal Guidance:</b>
+        {{ result.guidance }}
+    </p>
+
+    <hr>
 
     <a href="/helper">
-        <button>⬅️ Back to Waste Helper</button>
+        <button>🔍 Detect Another Waste</button>
     </a>
 
     <br><br>
 
     <a href="/home">
-        <button>🏠 Home</button>
+        <button>🏠 Back to Dashboard</button>
     </a>
 
 </body>

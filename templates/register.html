@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Eco Track - Sign In</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Eco Track - Create Account</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <h1>🌱 Eco Track</h1>
-    <h2>Create Your Account</h2>
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         alt="Eco Track Logo"
+         style="width: 180px;">
+
+    <h2>Create Your Eco Track Account</h2>
 
     <form method="POST">
 
@@ -19,6 +22,22 @@
 
         <label>Password:</label><br>
         <input type="password" name="password" required>
+
+        <br><br>
+
+        <h3>Select Your Role</h3>
+
+        <label>
+            <input type="radio" name="role" value="citizen" required>
+            👤 Normal Citizen
+        </label>
+
+        <br><br>
+
+        <label>
+            <input type="radio" name="role" value="worker" required>
+            🧑‍🔧 Service Worker
+        </label>
 
         <br><br>
 

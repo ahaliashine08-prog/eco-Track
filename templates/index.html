@@ -2,19 +2,36 @@
 <html>
 <head>
     <title>Eco Track</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <h1>🌱 Eco Track</h1>
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         alt="Eco Track Logo"
+         style="width: 220px;">
 
-    <h2>Welcome to Eco Track</h2>
+    <h1>Welcome to Eco Track 🌱</h1>
 
-    <p>Smart waste identification and disposal helper.</p>
+    <p>
+        Smart Waste Management System
+    </p>
+
+    <p>
+        Identify waste, find the correct bin,
+        and connect with waste service workers.
+    </p>
+
+    <br>
+
+    <a href="/login">
+        <button>🔐 Login</button>
+    </a>
+
+    <br><br>
 
     <a href="/register">
-        <button>Sign In</button>
+        <button>📝 Create Account</button>
     </a>
 
 </body>

@@ -1,42 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Eco Track - Waste Bins</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Eco Track - Waste Disposal Helper</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <h1>🗑️ Various Types of Waste Bins</h1>
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         alt="Eco Track Logo"
+         style="width: 160px;">
+
+    <h1>🔍 Waste Disposal Helper</h1>
+
+    <p>
+        Enter the name of a waste material to find
+        the correct disposal bin.
+    </p>
+
+    <form method="POST">
+
+        <input
+            type="text"
+            name="waste"
+            placeholder="Example: plastic bottle"
+            required
+        >
+
+        <button type="submit">
+            🔎 Find Waste Type
+        </button>
+
+    </form>
+
+
+    {% if result %}
 
     <hr>
 
-    <h2>🟢 Green Bin</h2>
-    <p><b>Biodegradable / Wet Waste</b></p>
-    <p>Food waste, vegetable peels, fruit peels, leaves etc.</p>
+    <h2>♻️ Waste Result</h2>
+
+    <p>
+        <b>Waste Type:</b>
+        {{ result.type }}
+    </p>
+
+    <p>
+        <b>Hazardousness:</b>
+        {{ result.hazard }}%
+    </p>
+
+    <p>
+        <b>Recommended Bin:</b>
+        {{ result.bin }}
+    </p>
+
+    <p>
+        <b>Disposal Guidance:</b>
+        {{ result.guidance }}
+    </p>
+
+    {% endif %}
+
 
     <hr>
 
-    <h2>🔵 Blue Bin</h2>
-    <p><b>Dry / Recyclable Waste</b></p>
-    <p>Paper, cardboard, plastic bottles, metal cans etc.</p>
+    <h2>📷 AI Waste Detection</h2>
 
-    <hr>
+    <p>
+        Upload a clear photo of the waste.
+        Eco Track AI will identify the waste and
+        suggest the appropriate bin.
+    </p>
 
-    <h2>🟡 Yellow Bin</h2>
-    <p><b>Special Waste</b></p>
-    <p>Batteries, medicines and certain chemical or medical waste.</p>
+    <form action="/photo"
+          method="POST"
+          enctype="multipart/form-data">
 
-    <hr>
+        <input
+            type="file"
+            name="photo"
+            accept="image/*"
+            required
+        >
 
-    <h2>⚫ Black Bin</h2>
-    <p><b>General / Non-Recyclable Waste</b></p>
-    <p>Diapers, used tissues, thermocol and other general waste.</p>
+        <br><br>
+
+        <button type="submit">
+            🤖 Detect Waste with AI
+        </button>
+
+    </form>
 
     <br>
 
     <a href="/home">
-        <button>⬅️ Back to Home</button>
+        <button>⬅️ Back to Dashboard</button>
     </a>
 
 </body>

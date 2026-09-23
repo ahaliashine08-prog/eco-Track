@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Eco Track - Report</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         alt="Eco Track Logo"
+         style="width: 160px;">
+
+    <h1>📩 Report / Service Request</h1>
+
+    <p>
+        Send a waste-related report or service request
+        to the Eco Track service workers.
+    </p>
+
+    <hr>
+
+    <form method="POST">
+
+        <label>
+            <b>Your Message:</b>
+        </label>
+
+        <br><br>
+
+        <textarea
+            name="message"
+            rows="7"
+            cols="45"
+            placeholder="Example: Waste has not been collected from our area."
+            required
+            style="
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid #aaa;
+                font-size: 16px;
+                resize: vertical;
+            "
+        ></textarea>
+
+        <br><br>
+
+        <button type="submit">
+            📩 Send Report
+        </button>
+
+    </form>
+
+    <br>
+
+    <a href="/my-reports">
+        <button>📋 View My Reports</button>
+    </a>
+
+    <br><br>
+
+    <a href="/home">
+        <button>⬅️ Back to Dashboard</button>
+    </a>
+
+</body>
+</html>

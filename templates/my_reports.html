@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Eco Track - My Reports</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         alt="Eco Track Logo"
+         style="width: 160px;">
+
+    <h1>📋 My Reports</h1>
+
+    <p>
+        Here you can check the reports and service requests
+        you have submitted.
+    </p>
+
+    <hr>
+
+    {% if reports %}
+
+        {% for report in reports %}
+
+            <div style="
+                border: 1px solid #aaa;
+                border-radius: 10px;
+                padding: 15px;
+                margin: 15px auto;
+                max-width: 600px;
+                background: white;
+            ">
+
+                <h3>Report #{{ report.id }}</h3>
+
+                <p>
+                    <b>Message:</b><br>
+                    {{ report.message }}
+                </p>
+
+                <p>
+                    <b>Status:</b>
+                    {{ report.status }}
+                </p>
+
+                <p>
+                    <b>Submitted:</b>
+                    {{ report.created_at }}
+                </p>
+
+            </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>📭 You haven't submitted any reports yet.</p>
+
+    {% endif %}
+
+    <hr>
+
+    <a href="/report">
+        <button>📩 Send New Report</button>
+    </a>
+
+    <br><br>
+
+    <a href="/home">
+        <button>⬅️ Back to Dashboard</button>
+    </a>
+
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Eco Track - Service Worker</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <img src="{{ url_for('static', filename='logo.jpeg') }}"
+         alt="Eco Track Logo"
+         style="width: 160px;">
+
+    <h1>🌱 ECO TRACK</h1>
+
+    <h2>🧑‍🔧 Service Worker Dashboard</h2>
+
+    <p>
+        Welcome, <b>{{ username }}</b>!
+    </p>
+
+    <p>
+        Here you can view citizen reports and update
+        their service status.
+    </p>
+
+    <hr>
+
+    <h2>📩 Citizen Reports</h2>
+
+    {% if reports %}
+
+        {% for report in reports %}
+
+            <div style="
+                border: 1px solid #aaa;
+                border-radius: 10px;
+                padding: 15px;
+                margin: 15px auto;
+                max-width: 600px;
+                background: white;
+            ">
+
+                <h3>Report #{{ report.id }}</h3>
+
+                <p>
+                    <b>Citizen:</b>
+                    {{ report.citizen_username }}
+                </p>
+
+                <p>
+                    <b>Message:</b>
+                    {{ report.message }}
+                </p>
+
+                <p>
+                    <b>Status:</b>
+                    {{ report.status }}
+                </p>
+
+                <p>
+                    <b>Date:</b>
+                    {{ report.created_at }}
+                </p>
+
+                <form
+                    action="/update-report/{{ report.id }}"
+                    method="POST"
+                >
+
+                    <label>
+                        Update Status:
+                    </label>
+
+                    <select name="status">
+
+                        <option value="Pending"
+                            {% if report.status == "Pending" %}
+                            selected
+                            {% endif %}>
+                            Pending
+                        </option>
+
+                        <option value="In Progress"
+                            {% if report.status == "In Progress" %}
+                            selected
+                            {% endif %}>
+                            In Progress
+                        </option>
+
+                        <option value="Completed"
+                            {% if report.status == "Completed" %}
+                            selected
+                            {% endif %}>
+                            Completed
+                        </option>
+
+                    </select>
+
+                    <br><br>
+
+                    <button type="submit">
+                        ✅ Update Status
+                    </button>
+
+                </form>
+
+            </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>
+            📭 No citizen reports yet.
+        </p>
+
+    {% endif %}
+
+    <hr>
+
+    <a href="/bins">
+        <button>🗑️ View Waste Bins</button>
+    </a>
+
+    <br><br>
+
+    <a href="/logout">
+        <button>🚪 Logout</button>
+    </a>
+
+</body>
+</html>
