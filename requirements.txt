@@ -1,4 +1,8 @@
 Flask
 Werkzeug
 gunicorn
-google-genaigoogle-genai
+<<<<<<< HEAD
+google-genai
+=======
+google-genai
+>>>>>>> 3eb23fdfa0d8db3adce321d154a39438e8256505
