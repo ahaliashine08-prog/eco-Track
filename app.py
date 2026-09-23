@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, redirect, url_for, session
+import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import json
 
@@ -9,12 +12,18 @@ from google.genai import types
 
 
 app = Flask(__name__)
-app.secret_key = "ecotrack-secret-key"
+
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "ecotrack-secret-key"
+)
 
 DATABASE = "ecotrack.db"
 
 
-# ---------------- DATABASE ----------------
+# =========================
+# DATABASE
+# =========================
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
@@ -25,7 +34,7 @@ def get_db():
 def create_database():
     conn = get_db()
 
-    # Users table
+    # USERS TABLE
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,16 +44,17 @@ def create_database():
         )
     """)
 
-    # If old database already exists without role column
+    # Check whether old database has role column
     columns = conn.execute("PRAGMA table_info(users)").fetchall()
     column_names = [column["name"] for column in columns]
 
     if "role" not in column_names:
-        conn.execute(
-            "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'citizen'"
-        )
+        conn.execute("""
+            ALTER TABLE users
+            ADD COLUMN role TEXT NOT NULL DEFAULT 'citizen'
+        """)
 
-    # Citizen reports / service requests
+    # REPORTS TABLE
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,29 +69,44 @@ def create_database():
     conn.close()
 
 
-# ---------------- WASTE INFORMATION ----------------
+# IMPORTANT:
+# This runs when Render/Gunicorn loads app.py
+create_database()
+
+
+# =========================
+# BIN INFORMATION
+# =========================
 
 BIN_INFO = {
     "Green": {
         "description": "Biodegradable and wet waste.",
         "examples": "Food waste, vegetable peels, fruit peels, leaves"
     },
+
     "Blue": {
         "description": "Dry and recyclable waste.",
         "examples": "Paper, cardboard, plastic bottles, metal cans"
     },
+
     "Yellow": {
         "description": "Special waste that needs careful disposal.",
         "examples": "Batteries, medicines, medical or chemical waste"
     },
+
     "Black": {
         "description": "General non-recyclable waste.",
-        "examples": "Diapers, tissues, thermocol and other non-recyclable waste"
+        "examples": "Diapers, tissues, thermocol and other general waste"
     }
 }
 
 
+# =========================
+# WASTE DATA
+# =========================
+
 WASTE_DATA = {
+
     "banana peel": {
         "type": "Biodegradable waste",
         "hazard": 5,
@@ -96,18 +121,32 @@ WASTE_DATA = {
         "guidance": "Put food waste in the green bin."
     },
 
+    "vegetable peel": {
+        "type": "Biodegradable waste",
+        "hazard": 5,
+        "bin": "Green",
+        "guidance": "Put vegetable peels in the green bin."
+    },
+
+    "fruit peel": {
+        "type": "Biodegradable waste",
+        "hazard": 5,
+        "bin": "Green",
+        "guidance": "Put fruit peels in the green bin."
+    },
+
     "paper": {
         "type": "Recyclable waste",
         "hazard": 5,
         "bin": "Blue",
-        "guidance": "Keep the paper dry and put it in the blue bin."
+        "guidance": "Keep paper dry and put it in the blue bin."
     },
 
     "cardboard": {
         "type": "Recyclable waste",
         "hazard": 5,
         "bin": "Blue",
-        "guidance": "Flatten the cardboard and put it in the blue bin."
+        "guidance": "Flatten cardboard and put it in the blue bin."
     },
 
     "plastic bottle": {
@@ -156,7 +195,7 @@ WASTE_DATA = {
         "type": "Special waste",
         "hazard": 80,
         "bin": "Yellow",
-        "guidance": "Do not flush unused medicine. Use an appropriate medicine collection facility."
+        "guidance": "Use an appropriate medicine collection facility."
     },
 
     "diaper": {
@@ -182,7 +221,9 @@ WASTE_DATA = {
 }
 
 
-# ---------------- LOGIN HELPERS ----------------
+# =========================
+# LOGIN CHECKS
+# =========================
 
 def logged_in():
     return "username" in session
@@ -196,7 +237,9 @@ def is_worker():
     return session.get("role") == "worker"
 
 
-# ---------------- HOME / START PAGE ----------------
+# =========================
+# FIRST PAGE
+# =========================
 
 @app.route("/")
 def index():
@@ -207,16 +250,21 @@ def index():
     return render_template("index.html")
 
 
-# ---------------- REGISTER ----------------
+# =========================
+# REGISTER
+# =========================
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
     if request.method == "POST":
 
-        username = request.form["username"].strip()
-        password = request.form["password"]
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
         role = request.form.get("role", "citizen")
+
+        if not username or not password:
+            return "Username and password are required."
 
         if role not in ["citizen", "worker"]:
             role = "citizen"
@@ -226,9 +274,11 @@ def register():
         conn = get_db()
 
         try:
+
             conn.execute(
                 """
-                INSERT INTO users (username, password, role)
+                INSERT INTO users
+                (username, password, role)
                 VALUES (?, ?, ?)
                 """,
                 (username, hashed_password, role)
@@ -243,26 +293,37 @@ def register():
 
             conn.close()
 
-            return "Username already exists! Please choose another username."
+            return "Username already exists. Please choose another username."
+
+        except Exception as e:
+
+            conn.close()
+
+            print("REGISTER ERROR:", e)
+
+            return "Registration failed."
 
     return render_template("register.html")
 
 
-# ---------------- LOGIN ----------------
+# =========================
+# LOGIN
+# =========================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
     if request.method == "POST":
 
-        username = request.form["username"].strip()
-        password = request.form["password"]
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
         conn = get_db()
 
         user = conn.execute(
             """
-            SELECT * FROM users
+            SELECT *
+            FROM users
             WHERE username = ?
             """,
             (username,)
@@ -270,19 +331,26 @@ def login():
 
         conn.close()
 
-        if user and check_password_hash(user["password"], password):
+        if user and check_password_hash(
+            user["password"],
+            password
+        ):
+
+            session.clear()
 
             session["username"] = user["username"]
             session["role"] = user["role"]
 
             return redirect(url_for("home"))
 
-        return "Invalid username or password!"
+        return "Invalid username or password."
 
     return render_template("login.html")
 
 
-# ---------------- LOGOUT ----------------
+# =========================
+# LOGOUT
+# =========================
 
 @app.route("/logout")
 def logout():
@@ -292,7 +360,9 @@ def logout():
     return redirect(url_for("index"))
 
 
-# ---------------- MAIN DASHBOARD ----------------
+# =========================
+# DASHBOARD
+# =========================
 
 @app.route("/home")
 def home():
@@ -300,6 +370,7 @@ def home():
     if not logged_in():
         return redirect(url_for("login"))
 
+    # SERVICE WORKER
     if is_worker():
 
         conn = get_db()
@@ -320,6 +391,7 @@ def home():
             reports=reports
         )
 
+    # CITIZEN
     return render_template(
         "home.html",
         username=session["username"],
@@ -327,7 +399,9 @@ def home():
     )
 
 
-# ---------------- BINS ----------------
+# =========================
+# BINS
+# =========================
 
 @app.route("/bins")
 def bins():
@@ -341,7 +415,9 @@ def bins():
     )
 
 
-# ---------------- WASTE HELPER ----------------
+# =========================
+# TEXT WASTE HELPER
+# =========================
 
 @app.route("/helper", methods=["GET", "POST"])
 def helper():
@@ -353,7 +429,10 @@ def helper():
 
     if request.method == "POST":
 
-        waste = request.form["waste"].strip().lower()
+        waste = request.form.get(
+            "waste",
+            ""
+        ).strip().lower()
 
         if waste in WASTE_DATA:
 
@@ -365,7 +444,7 @@ def helper():
                 "type": "Unknown waste",
                 "hazard": "Unknown",
                 "bin": "Cannot determine",
-                "guidance": "This waste item is not in our current database."
+                "guidance": "This waste item is not currently in our database."
             }
 
     return render_template(
@@ -374,7 +453,9 @@ def helper():
     )
 
 
-# ---------------- AI PHOTO DETECTION ----------------
+# =========================
+# AI IMAGE DETECTION
+# =========================
 
 @app.route("/photo", methods=["POST"])
 def photo():
@@ -391,49 +472,51 @@ def photo():
 
         image_bytes = uploaded_file.read()
 
+        if not image_bytes:
+            raise Exception("Empty image file.")
+
         api_key = os.environ.get("GEMINI_API_KEY")
 
         if not api_key:
+            raise Exception("GEMINI_API_KEY is missing.")
 
-            raise Exception("GEMINI_API_KEY is not configured.")
-
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(
+            api_key=api_key
+        )
 
         prompt = """
-        You are a waste-management assistant.
+Identify the main waste item in this image.
 
-        Look carefully at the uploaded image and identify the MAIN waste item.
+Return ONLY valid JSON.
 
-        Return ONLY JSON with exactly these fields:
+Use exactly this format:
 
-        {
-          "waste": "name of waste item",
-          "type": "waste type",
-          "hazard": 0,
-          "bin": "Green",
-          "guidance": "short disposal guidance"
-        }
+{
+  "waste": "name of waste",
+  "type": "waste type",
+  "hazard": 0,
+  "bin": "Green",
+  "guidance": "short disposal guidance"
+}
 
-        Rules:
+Rules:
 
-        1. hazard must be a number from 0 to 100.
-        2. bin MUST be exactly one of:
-           Green
-           Blue
-           Yellow
-           Black
+hazard must be a number between 0 and 100.
 
-        Green = biodegradable / wet waste.
+bin MUST be exactly one of:
 
-        Blue = dry recyclable waste.
+Green
+Blue
+Yellow
+Black
 
-        Yellow = special waste requiring careful disposal.
+Green = biodegradable or wet waste.
+Blue = dry recyclable waste.
+Yellow = special waste requiring careful disposal.
+Black = general non-recyclable waste.
 
-        Black = general non-recyclable waste.
-
-        If the image is unclear, still give your best identification
-        and explain the uncertainty briefly in guidance.
-        """
+If the image is unclear, give the best possible identification.
+"""
 
         response = client.models.generate_content(
             model="gemini-3.8-flash",
@@ -443,32 +526,66 @@ def photo():
                     mime_type=uploaded_file.mimetype
                 ),
                 prompt
-            ],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json"
-            )
+            ]
         )
 
         text = response.text.strip()
 
-        text = text.replace("```json", "")
-        text = text.replace("```", "")
+        # Remove markdown code fences if Gemini adds them
+        if text.startswith("```json"):
+            text = text[7:]
+
+        if text.startswith("```"):
+            text = text[3:]
+
+        if text.endswith("```"):
+            text = text[:-3]
+
         text = text.strip()
 
         result = json.loads(text)
 
-        # Safety validation
-        allowed_bins = ["Green", "Blue", "Yellow", "Black"]
+        allowed_bins = [
+            "Green",
+            "Blue",
+            "Yellow",
+            "Black"
+        ]
 
         if result.get("bin") not in allowed_bins:
             result["bin"] = "Cannot determine"
 
         try:
-            hazard = int(result.get("hazard", 0))
-            hazard = max(0, min(100, hazard))
+
+            hazard = int(
+                result.get("hazard", 0)
+            )
+
+            hazard = max(
+                0,
+                min(100, hazard)
+            )
+
             result["hazard"] = hazard
-        except:
+
+        except Exception:
+
             result["hazard"] = "Unknown"
+
+        result.setdefault(
+            "waste",
+            "Unknown"
+        )
+
+        result.setdefault(
+            "type",
+            "Unknown"
+        )
+
+        result.setdefault(
+            "guidance",
+            "Please follow local waste-disposal instructions."
+        )
 
         return render_template(
             "photo_result.html",
@@ -480,20 +597,24 @@ def photo():
 
         print("AI IMAGE ERROR:", e)
 
+        result = {
+            "waste": "Could not identify",
+            "type": "Unknown",
+            "hazard": "Unknown",
+            "bin": "Cannot determine",
+            "guidance": "AI detection failed. Please try a clear image."
+        }
+
         return render_template(
             "photo_result.html",
             filename=uploaded_file.filename,
-            result={
-                "waste": "Could not identify",
-                "type": "Unknown",
-                "hazard": "Unknown",
-                "bin": "Cannot determine",
-                "guidance": "Image detection failed. Please try a clear photo and make sure the Gemini API key is configured."
-            }
+            result=result
         )
 
 
-# ---------------- CITIZEN REPORT ----------------
+# =========================
+# CITIZEN REPORT
+# =========================
 
 @app.route("/report", methods=["GET", "POST"])
 def report():
@@ -506,11 +627,17 @@ def report():
 
     if request.method == "POST":
 
-        message = request.form["message"].strip()
+        message = request.form.get(
+            "message",
+            ""
+        ).strip()
 
-        if message:
+        if not message:
+            return "Please enter a message."
 
-            conn = get_db()
+        conn = get_db()
+
+        try:
 
             conn.execute(
                 """
@@ -526,14 +653,29 @@ def report():
             )
 
             conn.commit()
+
+        except Exception as e:
+
+            print("REPORT ERROR:", e)
+
             conn.close()
 
-            return redirect(url_for("my_reports"))
+            return "Could not submit the report."
 
-    return render_template("report.html")
+        conn.close()
+
+        return redirect(
+            url_for("my_reports")
+        )
+
+    return render_template(
+        "report.html"
+    )
 
 
-# ---------------- CITIZEN'S REPORTS ----------------
+# =========================
+# MY REPORTS
+# =========================
 
 @app.route("/my-reports")
 def my_reports():
@@ -564,9 +706,14 @@ def my_reports():
     )
 
 
-# ---------------- SERVICE WORKER UPDATE ----------------
+# =========================
+# SERVICE WORKER UPDATE
+# =========================
 
-@app.route("/update-report/<int:report_id>", methods=["POST"])
+@app.route(
+    "/update-report/<int:report_id>",
+    methods=["POST"]
+)
 def update_report(report_id):
 
     if not logged_in():
@@ -575,7 +722,10 @@ def update_report(report_id):
     if not is_worker():
         return redirect(url_for("home"))
 
-    status = request.form.get("status", "Pending")
+    status = request.form.get(
+        "status",
+        "Pending"
+    )
 
     allowed_status = [
         "Pending",
@@ -600,17 +750,18 @@ def update_report(report_id):
     conn.commit()
     conn.close()
 
-    return redirect(url_for("home"))
+    return redirect(
+        url_for("home")
+    )
 
 
-# ---------------- START APPLICATION ----------------
+# =========================
+# RUN LOCALLY
+# =========================
 
 if __name__ == "__main__":
 
-    create_database()
-
     print("Eco Track is starting...")
-    print("Open: http://127.0.0.1:5000")
 
     app.run(
         host="0.0.0.0",
