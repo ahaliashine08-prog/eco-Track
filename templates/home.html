@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Eco Track - Citizen Dashboard</title>
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Track - Citizen Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
     <img src="{{ url_for('static', filename='logo.jpeg') }}"
          alt="Eco Track Logo"
-         class="logo">
+         class="logo"
+         style="width: 180px; height: 180px;">
 
     <h1>🌱 ECO TRACK</h1>
 
@@ -20,8 +21,6 @@
 
     <h2>♻️ Citizen Dashboard</h2>
     <p>What would you like to do?</p>
-
-    <br>
 
     <div class="card">
         <a href="{{ url_for('bins') }}">
