@@ -1,9 +1,39 @@
 body {
     font-family: Arial, sans-serif;
-    background: #f0fff4;
+    background: linear-gradient(
+        135deg,
+        #e5f5e8,
+        #f5fff5,
+        #d9efdc
+    );
     text-align: center;
     margin: 0;
     padding: 30px;
+    min-height: 100vh;
+    position: relative;
+    isolation: isolate;
+}
+
+body::before, body::after {
+    position: fixed;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.25;
+    font-size: 100px;
+}
+
+body::before {
+    content: '🌿';
+    top: 15px;
+    left: 10px;
+    transform: rotate(-25deg);
+}
+
+body::after {
+    content: '🍃';
+    bottom: 15px;
+    right: 10px;
+    transform: rotate(25deg);
 }
 
 .logo {
