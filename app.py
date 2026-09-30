@@ -374,38 +374,71 @@ def bins():
     )
 
 
+
 # ---------------- WASTE HELPER ----------------
 
 @app.route("/helper", methods=["GET", "POST"])
 def helper():
-
     if "username" not in session:
         return redirect(url_for("login"))
 
     result = None
 
     if request.method == "POST":
-
-        waste = request.form["waste"].strip().lower()
+        waste = request.form.get("waste", "").strip().lower()
 
         if waste in WASTE_DATA:
+            result = dict(WASTE_DATA[waste])
+            result["waste"] = waste
 
-            result = WASTE_DATA[waste]
+        elif waste:
+            try:
+                api_key = os.environ.get("GEMINI_API_KEY")
+                if not api_key:
+                    raise Exception("GEMINI_API_KEY is missing")
 
-        else:
+                client = genai.Client(api_key=api_key)
 
-            result = {
-                "type": "Unknown waste",
-                "hazard": "Unknown",
-                "bin": "Cannot determine",
-                "guidance": "This item is not currently in our database."
-            }
+                prompt = f"""
+                Identify this waste item: {waste}
 
-    return render_template(
-        "helper.html",
-        result=result
-    )
+                Return only valid JSON in this format:
+                {{
+                    "waste": "{waste}",
+                    "type": "waste category",
+                    "hazard": 10,
+                    "bin": "Blue",
+                    "guidance": "disposal instructions"
+                }}
 
+                The bin must be Green, Blue, Yellow or Black.
+                Hazard must be a number from 0 to 100.
+                If you cannot identify it, use Unknown
+                for type and Cannot determine for bin.
+                Do not guess if the item is unclear.
+                """
+
+                response = client.models.generate_content(
+                    model="gemini-3.8-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json"
+                    )
+                )
+
+                result = json.loads(response.text)
+
+            except Exception as e:
+                print("TEXT AI ERROR:", repr(e))
+                result = {
+                    "waste": waste,
+                    "type": "Unknown",
+                    "hazard": "Unknown",
+                    "bin": "Cannot determine",
+                    "guidance": "AI could not identify this item. Please try again."
+                }
+
+    return render_template("helper.html", result=result)
 
 # ---------------- AI PHOTO DETECTION ----------------
 
